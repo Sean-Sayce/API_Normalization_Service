@@ -188,45 +188,45 @@ This keeps the “business logic” (the normalized response + filtering semanti
 
 ---
 
-## AI usage reflection
+# AI usage reflection
 
 AI (ChatGPT) was used as a pair-programming and review assistant, not as a code generator of record. It primarily supported design iteration, identification of edge cases, and validation of TypeScript/Express best practices. All final implementation decisions and tradeoffs were made manually.
 
-# Examples of Effective Prompts
+## Examples of Effective Prompts
 
-API design and separation of concerns
+### API design and separation of concerns
 
-Prompt:
+**Prompt:**
 “Design a clean Express router that accepts a data provider via dependency injection so the data source can be swapped later.”
 
-Result:
+**Result:**
 This led to the creation of a NewsProvider interface and a provider-agnostic router factory. The final interface shape and error boundaries were manually refined to better reflect real HTTP failure modes.
 
-Error handling and resilience
+### Error handling and resilience
 
-Prompt:
+**Prompt:**
 “What failure cases should be expected when calling an external JSON API, and how should they map to HTTP status codes?”
 
-Result:
+**Result:**
 The AI highlighted timeout handling, upstream error propagation, and partial failure tolerance. These ideas were manually implemented using Promise.allSettled, along with a droppedCount field to make partial failures explicit.
 
-TypeScript data normalization
+### TypeScript data normalization
 
-Prompt:
+**Prompt:**
 “Help normalize Hacker News item JSON into a strongly typed internal model with safe defaults.”
 
-Result:
+**Result:**
 The AI assisted in identifying nullable fields and necessary type conversions (e.g., Unix timestamps). Manual decisions were made about which fields should default versus remain optional, and stricter typing (exactOptionalPropertyTypes) was enforced.
 
-Build configuration and project structure
+### Build configuration and project structure
 
-Prompt:
+**Prompt:**
 “Given an API-only TypeScript service with no frontend assets, what is the cleanest build output strategy that avoids polluting src/ while keeping development and production entry points consistent?”
 
-Result:
+**Result:**
 This clarified that the cleanest approach for an API-only TypeScript service is to keep all source files in src/, emit all compiled artifacts into dist/, and avoid mixing build output with source code. The final setup was manually validated to ensure development-time execution and production startup used consistent entry points and behaved identically.
 
-# Where AI Required Extra Care:
+## Where AI Required Extra Care:
 
 Ambiguous prompts (e.g., “How can I make my API more user friendly”) produced overly generic guidance that required refinement.
 
@@ -234,7 +234,7 @@ Project-specific assumptions occasionally led to suggestions for unnecessary com
 
 Over-abstraction such as excessive abstrraction layers or logging frameworks sometimes added complexity without clear benefit for the project scope; clarity and simplicity were favored instead.
 
-# Manual Decision-Making and Overrides
+## Manual Decision-Making and Overrides
 
 The AI initially proposed passing upstream fields through directly when names were similar. This was overridden in favor of explicit normalization to ensure the internal Story model remains stable even if upstream schemas change.
 
