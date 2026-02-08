@@ -1,8 +1,13 @@
+// Provider interface + params
 import type { ListStoriesParams, NewsProvider } from "./NewsProvider.js";
-import type { Story } from "../types.js";
-import { UpstreamHttpError, UpstreamTimeoutError } from "./errors.js";
 
-// Raw Hacker News item
+// Normalized story type
+import type { Story } from "../types.js";
+
+// Shared provider utilities
+import {fetchJson, fetchManySettled, safeHost, buildUrl, UpstreamHttpError, UpstreamTimeoutError} from "./providerUtils.js";
+
+// Raw Hacker News shape
 type HNItem = {
   by?: string;
   descendants?: number;
@@ -15,74 +20,75 @@ type HNItem = {
   url?: string;
 };
 
-// Hacker News provider
+// Hacker News implementation
 export class HackerNewsProvider implements NewsProvider {
-  // Base API URL
+  // Hacker News base URL
   private readonly baseUrl = "https://hacker-news.firebaseio.com/v0";
 
-  // Fetch normalized stories
+  // Main fetch entrypoint
   async listStories(
     params: ListStoriesParams
   ): Promise<{ items: Story[]; droppedCount: number }> {
 
-    // Clamp query params
+    // Clamp requested limit
     const limit = Math.max(1, Math.min(Math.trunc(params.limit), 50));
+
+    // Optional score filter
     const minScore = params.minScore ?? 0;
 
+    // Story ID accumulator
     let ids: number[] = [];
 
     // Fetch top story IDs
     try {
-      const raw = await this.fetchJson<unknown>(
-        `${this.baseUrl}/topstories.json`
+      const raw = await fetchJson<unknown>(
+        buildUrl(this.baseUrl, "/topstories.json")
       );
 
-      // Validate response shape
+      // Validate upstream shape
       if (!Array.isArray(raw)) {
         throw new Error("topstories response was not an array");
       }
 
-      // Filter numeric IDs
+      // Keep numeric IDs
       ids = raw.filter((x): x is number => typeof x === "number");
+
     } catch (err) {
-      // Preserve upstream errors
+      // Preserve upstream failures
       if (err instanceof UpstreamTimeoutError || err instanceof UpstreamHttpError) {
         throw err;
       }
+
+      // Wrap unknown errors
       throw new Error(`Failed to fetch top stories: ${(err as Error).message}`);
     }
 
-    // Fetch individual items
-    const items = await Promise.allSettled(
-      ids.slice(0, limit).map((id) =>
-        this.fetchJson<HNItem>(`${this.baseUrl}/item/${id}.json`)
-      )
-    );
+    // Fetch item details
+    const { ok: fulfilled, droppedCount } =
+      await fetchManySettled<number, HNItem>(
+        ids.slice(0, limit),
+        (id) =>
+          fetchJson<HNItem>(
+            buildUrl(this.baseUrl, `/item/${id}.json`)
+          )
+      );
 
-    // Count failed fetches
-    const droppedCount = items.filter((r) => r.status === "rejected").length;
-
-    // Extract successful items
-    const fulfilled = items
-      .filter((r): r is PromiseFulfilledResult<HNItem> => r.status === "fulfilled")
-      .map((r) => r.value);
-
-    // Normalize and filter stories
+    // Normalize + filter stories
     const stories = fulfilled
-      .filter((it) => it?.type === "story")
-      .map((it) => this.normalizeItem(it))
-      .filter((s) => s.score >= minScore);
+      .filter((it) => it?.type === "story") // Keep stories only
+      .map((it) => this.normalizeItem(it)) // Normalize fields
+      .filter((s) => s.score >= minScore); // Apply score filter
 
-    return {
-      items: stories,
-      droppedCount,
-    };
+    // Return normalized result
+    return { items: stories, droppedCount };
   }
 
-  // Normalize story fields
+  // Map HN → Story
   private normalizeItem(item: HNItem): Story {
+    // Optional URL field
     const url = item.url ?? null;
 
+    // Construct normalized object
     return {
       id: item.id,
       title: item.title ?? "(untitled)",
@@ -93,42 +99,7 @@ export class HackerNewsProvider implements NewsProvider {
       createdAt: item.time
         ? new Date(item.time * 1000).toISOString()
         : null,
-      source: this.safeHost(url),
+      source: safeHost(url), // Extract hostname
     };
-  }
-
-  // Safely extract hostname
-  private safeHost(url: string | null): string | null {
-    if (!url) return null;
-    try {
-      return new URL(url).host;
-    } catch {
-      return null;
-    }
-  }
-
-  // Fetch JSON with timeout
-  private async fetchJson<T>(url: string): Promise<T> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    try {
-      const res = await fetch(url, { signal: controller.signal });
-
-      // Handle non-OK responses
-      if (!res.ok) {
-        throw new UpstreamHttpError(res.status, `Upstream returned ${res.status}`);
-      }
-
-      return (await res.json()) as T;
-    } catch (err) {
-      // Convert abort to timeout
-      if (err instanceof Error && err.name === "AbortError") {
-        throw new UpstreamTimeoutError();
-      }
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
-    }
   }
 }

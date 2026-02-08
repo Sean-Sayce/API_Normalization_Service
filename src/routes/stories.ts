@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { NewsProvider, ListStoriesParams } from "../providers/NewsProvider.js";
-import { UpstreamHttpError, UpstreamTimeoutError } from "../providers/errors.js";
+import { UpstreamHttpError, UpstreamTimeoutError} from "../providers/providerUtils.js";
 
 // Parse and validate integers
 function parseIntParam(value: unknown, name: string): number | undefined {

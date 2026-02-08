@@ -13,6 +13,10 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+app.get("/", (_req, res) => {
+  res.redirect("/stories");
+});
+
 // Register stories route
 app.use("/stories", createStoriesRouter(
   // Inject news provider

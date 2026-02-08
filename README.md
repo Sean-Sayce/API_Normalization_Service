@@ -142,6 +142,7 @@ Key transformations:
 
 ## Resilience & error handling
 
+- Shared upstream behavior is centralized in `providerUtils.ts`.
 - Each upstream request uses an `AbortController` timeout (currently **5s**).
 - Upstream error mapping:
   - `504` for upstream timeouts
@@ -161,6 +162,8 @@ Key transformations:
   - Provider contract (`NewsProvider`) and shared types (`ListStoriesParams`, `ListStoriesResult`).
 - `src/providers/HackerNewsProvider.ts`
   - Data fetching + transformation for the Hacker News API.
+- `src/providers/providerUtils.ts`  
+  - Shared provider utilities for upstream HTTP access, timeouts, error handling, parallel fetch helpers, and safe URL parsing.
 - `src/types.ts`
   - Normalized domain model (`Story`).
 - `src/app.ts`
@@ -170,9 +173,14 @@ Key transformations:
 
 **Would change:**
 
-- Add/replace a provider implementation (e.g., `src/providers/GitHubProvider.ts`) that implements:
-  - `NewsProvider.listStories(params)`
-- Update `src/app.ts` to inject the new provider:
+- Add or replace a provider implementation (e.g., `src/providers/GitHubProvider.ts`) that implements `NewsProvider.listStories(params)` and maps the new upstreamresponse into the normalized `Story` model.
+- Update `src/app.ts` to inject the new provider.
+
+**Would NOT change:**
+
+- The REST API (`/stories`), query parameters, or response shape.
+- The router and provider interface (`NewsProvider`).
+- Shared provider behavior in `providerUtils.ts` (timeouts, upstream error handling, parallel fetch helpers, URL parsing).
 
 ```ts
 app.use("/stories", createStoriesRouter(new YourNewProvider()));
