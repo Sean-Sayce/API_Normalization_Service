@@ -31,7 +31,7 @@ export class HackerNewsProvider implements NewsProvider {
   ): Promise<{ items: Story[]; droppedCount: number }> {
 
     // Clamp requested limit
-    const limit = Math.max(1, Math.min(Math.trunc(params.limit), 50));
+    const limit = params.limit;
 
     // Optional score filter
     const minScore = params.minScore ?? 0;
