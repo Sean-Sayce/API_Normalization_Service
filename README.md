@@ -228,18 +228,18 @@ This clarified that the cleanest approach for an API-only TypeScript service is 
 
 ## Where AI Required Extra Care:
 
-Ambiguous prompts (e.g., “How can I make my API more user friendly”) produced overly generic guidance that required refinement.
+- Ambiguous prompts (e.g., “How can I make my API more user friendly”) produced overly generic guidance that required refinement.
 
-Project-specific assumptions occasionally led to suggestions for unnecessary components (such as frontend assets or additional middleware).
+- Project-specific assumptions occasionally led to suggestions for unnecessary components (such as frontend assets or additional middleware).
 
-Over-abstraction such as excessive abstrraction layers or logging frameworks sometimes added complexity without clear benefit for the project scope; clarity and simplicity were favored instead.
+- Over-abstraction such as excessive abstrraction layers or logging frameworks sometimes added complexity without clear benefit for the project scope; clarity and simplicity were favored instead.
 
 ## Manual Decision-Making and Overrides
 
-The AI initially proposed passing upstream fields through directly when names were similar. This was overridden in favor of explicit normalization to ensure the internal Story model remains stable even if upstream schemas change.
+- The AI initially proposed passing upstream fields through directly when names were similar. This was overridden in favor of explicit normalization to ensure the internal Story model remains stable even if upstream schemas change.
 
-AI-generated code was functional but tended to mask important edge cases (e.g., silently dropping failed upstream items). These implementations were overridden in favor of explicit error handling and observability so the client had greater understanding of the issue.
+- AI-generated code was functional but tended to mask important edge cases (e.g., silently dropping failed upstream items). These implementations were overridden in favor of explicit error handling and observability so the client had greater understanding of the issue.
 
-The project was intentionally kept API-only to stay in-scope, despite suggestions to add a homepage or frontend.
+- The project was intentionally kept API-only to stay in-scope, despite suggestions to add a homepage or frontend.
 
-All AI-generated suggestions were reviewed for correctness, security, and alignment with the challenge requirements before integration.
+- All AI-generated suggestions were reviewed for correctness, security, and alignment with the challenge requirements before integration.
